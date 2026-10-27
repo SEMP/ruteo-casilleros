@@ -17,14 +17,10 @@ import json
 import os
 import urllib.request
 
-# (nombre, latitud, longitud). OSRM recibe longitud,latitud: ojo con el orden.
-PUNTOS = [
-    ("depósito (prueba)", -25.4960, -54.6640),
-    ("casillero A", -25.5095, -54.6115),
-    ("casillero B", -25.5290, -54.6205),
-    ("casillero C", -25.4870, -54.6280),
-    ("casillero D", -25.5450, -54.6430),
-]
+# Los mismos puntos que el visor (demo/puntos.json): (nombre, latitud, longitud).
+# OSRM recibe longitud,latitud: ojo con el orden.
+with open(os.path.join(os.path.dirname(__file__), "puntos.json"), encoding="utf-8") as archivo:
+    PUNTOS = [(p["nombre"], p["lat"], p["lon"]) for p in json.load(archivo)["puntos"]]
 
 
 def puerto_osrm():

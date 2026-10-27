@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visor de rutas — casilleros</title>
+<!-- Leaflet: mapas con OpenStreetMap. -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root {
+    --fondo: #f6f6f4; --panel: #ffffff; --texto: #1d1d1b; --suave: #6b6b66; --borde: #ddddd8;
+    --deposito: #b3261e; --casillero: #1f5fa8; --ruta: #1f5fa8; --optima: #2e7d32;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.4 system-ui, sans-serif; color: var(--texto); background: var(--fondo);
+         display: grid; grid-template-columns: 360px 1fr; height: 100vh; }
+  aside { background: var(--panel); border-right: 1px solid var(--borde); padding: 16px; overflow-y: auto; }
+  #mapa { height: 100vh; }
+  h1 { font-size: 17px; margin: 0 0 4px; }
+  h2 { font-size: 14px; margin: 18px 0 6px; }
+  p.ayuda { color: var(--suave); margin: 0 0 10px; font-size: 13px; }
+  .botones { display: flex; flex-wrap: wrap; gap: 6px; }
+  button { font: inherit; padding: 6px 10px; border: 1px solid var(--borde); border-radius: 6px;
+           background: var(--fondo); cursor: pointer; }
+  button:hover { border-color: var(--suave); }
+  button.principal { background: var(--casillero); color: #fff; border-color: var(--casillero); }
+  #estado { min-height: 20px; margin: 10px 0 0; color: var(--suave); font-size: 13px; }
+  #estado.error { color: var(--deposito); }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 3px 5px; border-bottom: 1px solid var(--borde); text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  tr.total td { font-weight: 600; border-bottom: none; }
+  ul#lista { list-style: none; padding: 0; margin: 0; }
+  ul#lista li { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+  .punto { width: 22px; height: 22px; border-radius: 50%; color: #fff; font-size: 11px; font-weight: 700;
+           display: flex; align-items: center; justify-content: center; border: 2px solid #fff;
+           box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
+  .punto.deposito { background: var(--deposito); border-radius: 4px; }
+  .punto.casillero { background: var(--casillero); }
+  .coordenadas { color: var(--suave); font-size: 12px; margin-left: auto; }
+  .matriz-scroll { overflow-x: auto; }
+  footer { margin-top: 18px; color: var(--suave); font-size: 12px; }
+  @media (max-width: 760px) {
+    body { grid-template-columns: 1fr; grid-template-rows: 55vh auto; height: auto; }
+    #mapa { height: 55vh; grid-row: 1; }
+    aside { grid-row: 2; border-right: none; }
+  }
+</style>
+</head>
+<body>
+<aside>
+  <h1>Visor de rutas</h1>
+  <p class="ayuda">Red vial de OpenStreetMap servida por OSRM en local. Clic en el mapa: agrega un
+    casillero. Arrastrar: mover. Clic derecho en un casillero: quitarlo.</p>
+
+  <div class="botones">
+    <button class="principal" id="b-orden">Ruta en este orden</button>
+    <button id="b-trip">Mejor orden (OSRM)</button>
+    <button id="b-matriz">Matriz de tiempos</button>
+    <button id="b-reiniciar">Reiniciar</button>
+  </div>
+  <div id="estado"></div>
+
+  <h2>Puntos</h2>
+  <ul id="lista"></ul>
+
+  <div id="resultado"></div>
+
+  <footer>«Mejor orden» usa el servicio <code>trip</code> de OSRM (una heurística para un
+    solo vehículo, sin capacidad): sirve de referencia, no es el método del proyecto.
+    Los puntos son de prueba, no casilleros reales.</footer>
+</aside>
+<div id="mapa"></div>
+
+<script>
+const OSRM = "/osrm";   // nginx lo pasa al servidor OSRM (demo/nginx.conf)
+
+const mapa = L.map("mapa");
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: '&copy; colaboradores de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+}).addTo(mapa);
+const capaRuta = L.layerGroup().addTo(mapa);
+
+let puntos = [];   // {nombre, tipo: "deposito" | "casillero", lat, lon, marcador}
+
+// --- Puntos -------------------------------------------------------------------------
+
+const deposito = () => puntos.find(p => p.tipo === "deposito");
+const casilleros = () => puntos.filter(p => p.tipo === "casillero");
+
+function etiqueta(p) {
+  // El depósito lleva ⌂ para no confundirse con un casillero «D».
+  return p.tipo === "deposito" ? "⌂" : p.nombre.replace(/^casillero\s*/i, "").slice(0, 2);
+}
+
+function icono(p) {
+  return L.divIcon({
+    className: "",
+    html: `<div class="punto ${p.tipo}">${etiqueta(p)}</div>`,
+    iconSize: [22, 22], iconAnchor: [11, 11],
+  });
+}
+
+function agregar(p) {
+  p.marcador = L.marker([p.lat, p.lon], { draggable: true, icon: icono(p) })
+    .addTo(mapa).bindTooltip(p.nombre);
+  p.marcador.on("dragend", () => {
+    const { lat, lng } = p.marcador.getLatLng();
+    p.lat = lat; p.lon = lng;
+    limpiar(); listar();
+  });
+  p.marcador.on("contextmenu", () => {
+    if (p.tipo === "deposito") return avisar("El depósito no se puede quitar.", true);
+    mapa.removeLayer(p.marcador);
+    puntos = puntos.filter(q => q !== p);
+    limpiar(); listar();
+  });
+  puntos.push(p);
+}
+
+function nombreNuevo() {
+  const usados = new Set(casilleros().map(etiqueta));
+  const letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  for (const l of letras) if (!usados.has(l)) return `casillero ${l}`;
+  return `casillero ${casilleros().length + 1}`;
+}
+
+function listar() {
+  document.getElementById("lista").innerHTML = puntos.map(p => `
+    <li><span class="punto ${p.tipo}">${etiqueta(p)}</span>${p.nombre}
+      <span class="coordenadas">${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}</span></li>`).join("");
+}
+
+async function cargar() {
+  puntos.forEach(p => mapa.removeLayer(p.marcador));
+  puntos = [];
+  limpiar();
+  const datos = await (await fetch("puntos.json")).json();
+  datos.puntos.forEach(p => agregar({ ...p }));
+  mapa.fitBounds(L.latLngBounds(puntos.map(p => [p.lat, p.lon])).pad(0.2));
+  listar();
+}
+
+mapa.on("click", e => {
+  agregar({ nombre: nombreNuevo(), tipo: "casillero", lat: e.latlng.lat, lon: e.latlng.lng });
+  limpiar(); listar();
+});
+
+// --- OSRM ---------------------------------------------------------------------------
+
+async function osrm(servicio, lista, parametros) {
+  // OSRM recibe longitud,latitud.
+  const coordenadas = lista.map(p => `${p.lon.toFixed(6)},${p.lat.toFixed(6)}`).join(";");
+  const respuesta = await fetch(`${OSRM}/${servicio}/v1/driving/${coordenadas}?${parametros}`);
+  const datos = await respuesta.json();
+  if (datos.code !== "Ok") throw new Error(`OSRM: ${datos.message || datos.code}`);
+  return datos;
+}
+
+const km = m => (m / 1000).toFixed(1);
+const min = s => (s / 60).toFixed(1);
+
+function dibujar(geometria, color) {
+  capaRuta.clearLayers();
+  L.geoJSON(geometria, { style: { color, weight: 5, opacity: 0.8 } }).addTo(capaRuta);
+}
+
+function tramos(titulo, orden, legs) {
+  let filas = "", distancia = 0, duracion = 0;
+  legs.forEach((leg, i) => {
+    distancia += leg.distance; duracion += leg.duration;
+    filas += `<tr><td>${etiqueta(orden[i])} → ${etiqueta(orden[i + 1])}</td>
+      <td>${km(leg.distance)}</td><td>${min(leg.duration)}</td></tr>`;
+  });
+  document.getElementById("resultado").innerHTML = `
+    <h2>${titulo}</h2>
+    <table><thead><tr><th>Tramo</th><th>km</th><th>min</th></tr></thead>
+    <tbody>${filas}<tr class="total"><td>Total</td><td>${km(distancia)}</td><td>${min(duracion)}</td></tr></tbody></table>`;
+}
+
+async function rutaEnOrden() {
+  const orden = [deposito(), ...casilleros(), deposito()];
+  const datos = await osrm("route", orden, "overview=full&geometries=geojson");
+  dibujar(datos.routes[0].geometry, getComputedStyle(document.body).getPropertyValue("--ruta"));
+  tramos("Ruta en el orden de la lista (ida y vuelta)", orden, datos.routes[0].legs);
+}
+
+async function mejorOrden() {
+  const entrada = [deposito(), ...casilleros()];
+  const datos = await osrm("trip", entrada, "source=first&roundtrip=true&overview=full&geometries=geojson");
+  // waypoints[i].waypoint_index: posición del punto i de la entrada dentro del recorrido.
+  const orden = [];
+  datos.waypoints.forEach((w, i) => { orden[w.waypoint_index] = entrada[i]; });
+  orden.push(entrada[0]);
+  dibujar(datos.trips[0].geometry, getComputedStyle(document.body).getPropertyValue("--optima"));
+  tramos("Mejor orden según OSRM (ida y vuelta)", orden, datos.trips[0].legs);
+}
+
+async function matriz() {
+  const lista = [deposito(), ...casilleros()];
+  const datos = await osrm("table", lista, "annotations=duration,distance");
+  const cabecera = lista.map(p => `<th>${etiqueta(p)}</th>`).join("");
+  const filas = lista.map((p, i) => `<tr><td>${etiqueta(p)}</td>${
+    datos.durations[i].map(s => `<td>${min(s)}</td>`).join("")}</tr>`).join("");
+  document.getElementById("resultado").innerHTML = `
+    <h2>Tiempo de viaje (min)</h2>
+    <p class="ayuda">Fila = origen, columna = destino. No es simétrica: las calles de un solo
+      sentido cambian la ida y la vuelta.</p>
+    <div class="matriz-scroll"><table><thead><tr><th></th>${cabecera}</tr></thead>
+    <tbody>${filas}</tbody></table></div>`;
+}
+
+// --- Interfaz -----------------------------------------------------------------------
+
+function avisar(texto, error = false) {
+  const estado = document.getElementById("estado");
+  estado.textContent = texto;
+  estado.className = error ? "error" : "";
+}
+
+function limpiar() {
+  capaRuta.clearLayers();
+  document.getElementById("resultado").innerHTML = "";
+  avisar("");
+}
+
+function boton(id, accion) {
+  document.getElementById(id).addEventListener("click", async () => {
+    if (!casilleros().length) return avisar("Agregá al menos un casillero (clic en el mapa).", true);
+    avisar("Consultando OSRM…");
+    try { await accion(); avisar(""); }
+    catch (e) { avisar(`${e.message}. ¿Está levantado OSRM? (docker compose up -d)`, true); }
+  });
+}
+
+boton("b-orden", rutaEnOrden);
+boton("b-trip", mejorOrden);
+boton("b-matriz", matriz);
+document.getElementById("b-reiniciar").addEventListener("click", cargar);
+
+cargar().catch(e => avisar(`No se pudo cargar puntos.json: ${e.message}`, true));
+</script>
+</body>
+</html>

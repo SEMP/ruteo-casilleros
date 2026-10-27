@@ -1,9 +1,11 @@
 # Red vial de Paraguay (OpenStreetMap) servida por OSRM en local, sin límites de uso.
 #
 #   docker compose run --rm preparar     # una vez: baja el mapa y lo procesa (~ minutos)
-#   docker compose up -d osrm            # levanta el servidor en http://localhost:5000
+#   docker compose up -d                 # levanta OSRM en http://localhost:5000 y el visor
 #                                        # (otro puerto: OSRM_PUERTO=5080 en .env)
 #   python3 demo/consulta.py             # ruta y matriz de tiempos entre puntos de prueba
+#   visor (mapa): http://localhost:8080  # se levanta con `docker compose up -d`
+#                                        # (otro puerto: VISOR_PUERTO=8088 en .env)
 #   docker compose down
 #
 # Para actualizar el mapa: borrar datos/osrm/ y volver a correr `preparar`. En Linux los
@@ -50,4 +52,16 @@ services:
       - "${OSRM_PUERTO:-5000}:5000"
     # --max-table-size: el valor por defecto (100) limita la matriz a 100 x 100 puntos.
     command: osrm-routed --algorithm mld --max-table-size 1000 /datos/paraguay-latest.osrm
+    restart: unless-stopped
+
+  # Visor: mapa con Leaflet + OpenStreetMap (demo/index.html). Pasa /osrm/ al servidor OSRM.
+  visor:
+    image: nginx:1.27-alpine
+    depends_on:
+      - osrm
+    ports:
+      - "${VISOR_PUERTO:-8080}:80"
+    volumes:
+      - ./demo:/usr/share/nginx/html:ro
+      - ./demo/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     restart: unless-stopped

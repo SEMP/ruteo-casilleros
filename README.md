@@ -15,15 +15,26 @@ Requisitos: Docker (con Compose) y Python 3 (solo para el demo; no instala nada)
 
 ```
 docker compose run --rm preparar   # una vez: baja el mapa de Paraguay (~150 MB) y lo procesa
-docker compose up -d osrm          # servidor de ruteo en http://localhost:5000
-python3 demo/consulta.py           # ruta entre dos puntos y matriz de tiempos entre cinco
+docker compose up -d               # OSRM en http://localhost:5000 y el visor en http://localhost:8080
+python3 demo/consulta.py           # (opcional) lo mismo por consola: ruta y matriz de tiempos
 docker compose down                # apagar
 ```
 
+**Visor** (<http://localhost:8080>): mapa con los puntos de `demo/puntos.json`. Clic en el
+mapa agrega un casillero, arrastrar lo mueve, clic derecho lo quita. Botones:
+
+- *Ruta en este orden*: depósito → casilleros en el orden de la lista → depósito, dibujada por
+  las calles, con km y minutos de cada tramo.
+- *Mejor orden (OSRM)*: el servicio `trip` de OSRM, una heurística para un solo vehículo y sin
+  capacidad. Es una referencia, no el método del proyecto.
+- *Matriz de tiempos*: la entrada del ruteo.
+
 - `preparar` tarda ~1,5 min y deja ~600 MB en `datos/osrm/` (no se versiona). Se corre de nuevo
   solo para actualizar el mapa.
-- **Puerto ocupado:** crear un `.env` con `OSRM_PUERTO=5080` (o el que esté libre); el demo lo
-  lee también.
+- **Puerto ocupado:** crear un `.env` con `OSRM_PUERTO=5080` y/o `VISOR_PUERTO=8088` (los que
+  estén libres); `consulta.py` lee el de OSRM de ahí.
+- El visor usa Leaflet y los mosaicos de `tile.openstreetmap.org` (libres, para uso liviano).
+  El ruteo no sale de la máquina: nginx pasa `/osrm/` al OSRM local (`demo/nginx.conf`).
 - Imagen: `ghcr.io/project-osrm/osrm-backend:v6.0.0`. Las imágenes de Docker Hub
   (`osrm/osrm-backend`) dejaron de actualizarse en 2021.
 - Servicios de OSRM que usamos: `route` (ruta entre puntos) y `table` (matriz de tiempos y
