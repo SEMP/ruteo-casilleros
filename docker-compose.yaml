@@ -1,0 +1,53 @@
+# Red vial de Paraguay (OpenStreetMap) servida por OSRM en local, sin límites de uso.
+#
+#   docker compose run --rm preparar     # una vez: baja el mapa y lo procesa (~ minutos)
+#   docker compose up -d osrm            # levanta el servidor en http://localhost:5000
+#                                        # (otro puerto: OSRM_PUERTO=5080 en .env)
+#   python3 demo/consulta.py             # ruta y matriz de tiempos entre puntos de prueba
+#   docker compose down
+#
+# Para actualizar el mapa: borrar datos/osrm/ y volver a correr `preparar`. En Linux los
+# archivos quedan a nombre de root; se borran desde el contenedor:
+#   docker compose run --rm mapa sh -c 'rm -f /datos/*'
+# Datos © colaboradores de OpenStreetMap (ODbL). Extracto de Geofabrik.
+
+x-osrm: &osrm
+  image: ghcr.io/project-osrm/osrm-backend:v6.0.0
+  volumes:
+    - ./datos/osrm:/datos
+
+services:
+  # Descarga el extracto de Paraguay si no está. Baja a un temporal y lo renombra al
+  # terminar, para que una descarga cortada no quede como mapa válido.
+  mapa:
+    image: alpine:3.20
+    profiles: [preparar]
+    volumes:
+      - ./datos/osrm:/datos
+    command: >
+      sh -c 'test -s /datos/paraguay-latest.osm.pbf
+      || (wget -O /datos/descarga.tmp
+      https://download.geofabrik.de/south-america/paraguay-latest.osm.pbf
+      && mv /datos/descarga.tmp /datos/paraguay-latest.osm.pbf)'
+
+  # Procesa el mapa para el algoritmo MLD (perfil de auto).
+  preparar:
+    <<: *osrm
+    profiles: [preparar]
+    depends_on:
+      mapa:
+        condition: service_completed_successfully
+    command: >
+      sh -c 'osrm-extract -p /opt/car.lua /datos/paraguay-latest.osm.pbf
+      && osrm-partition /datos/paraguay-latest.osrm
+      && osrm-customize /datos/paraguay-latest.osrm'
+
+  # Servidor de ruteo: /route (entre puntos) y /table (matriz de tiempos y distancias).
+  osrm:
+    <<: *osrm
+    ports:
+      # Puerto en la máquina: OSRM_PUERTO en .env (no se versiona) si el 5000 está ocupado.
+      - "${OSRM_PUERTO:-5000}:5000"
+    # --max-table-size: el valor por defecto (100) limita la matriz a 100 x 100 puntos.
+    command: osrm-routed --algorithm mld --max-table-size 1000 /datos/paraguay-latest.osrm
+    restart: unless-stopped
