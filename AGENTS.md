@@ -1,0 +1,43 @@
+# AGENTS.md — ruteo-casilleros
+
+Instrucciones para agentes de IA (Claude Code, Codex, etc.). **Este es el archivo canónico**:
+`CLAUDE.md` solo lo importa. Los cambios van acá.
+
+## Contexto
+
+Código del proyecto de investigación **«Ruteo Dinámico de Vehículos en Escenarios Logísticos
+Emergentes — Fase II»** (FPUNE, 2026; Daisy Kang y Sergio Morel).
+
+**El contexto del proyecto no está acá**: está en el workspace `proyecto-inv-2026`
+(`git@github.com:SEMP/proyecto-inv-2026.git`), que clona este repo en `repos/ruteo-casilleros`.
+Ahí están el proyecto presentado, el alcance (`docs/pendientes.md`), las herramientas
+(`docs/herramientas.md`), la revisión de la literatura y los mensajes entre el equipo. Si este
+repo está clonado dentro del workspace, leer `../../AGENTS.md` al empezar.
+
+**Qué resuelve:** la mejor ruta para **cargar los casilleros** (depósito → casilleros), con la
+ubicación de los casilleros como dato, considerando la capacidad de carga de cada vehículo, la
+cantidad de vehículos y la posición de cada uno en el momento de decidir (ruteo dinámico).
+
+## Reglas
+
+- **Herramientas libres y sin límites de uso.** Red vial de OpenStreetMap con OSRM en local
+  (Docker). Nada de APIs pagas o con cuota (Google Maps, servidor público de OSRM).
+- **El método de solución es propio**: es la contribución del proyecto. OR-Tools o PyVRP se
+  usan solo como comparación en la validación.
+- **No se usa el código, el caso ni los datos de la tesis doctoral de Daisy** (trenes de Quito,
+  NSGA-II).
+- **Reproducibilidad:** cada experimento se puede volver a correr desde el repo: instancia,
+  parámetros y semilla registrados; los resultados que van al informe o al artículo salen de
+  un script, no de una ejecución a mano.
+- **Datos:** el mapa de OSM y los archivos procesados de OSRM se descargan o se generan con un
+  script; no se versionan (pesan). Citar «© colaboradores de OpenStreetMap».
+- **Git:** `main` siempre funciona. Cada tarea en su rama (`feature/<tema>`, `fix/<tema>`); al
+  terminarla, quien la hizo la mergea a `main` y borra la rama. Sin pull requests: si hace
+  falta que la otra persona mire algo, mensaje en `mensajes/` del workspace.
+- **Todo en español:** documentación, comentarios y mensajes de commit. Los nombres del código
+  pueden ir en inglés si el lenguaje o las librerías lo hacen más natural; decidirlo una vez y
+  mantenerlo.
+
+## Estado
+
+⚠️ FALTA: lenguaje y estructura del código. Todavía no se empezó a programar.

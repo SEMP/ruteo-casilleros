@@ -1,0 +1,27 @@
+# Datos de mapas y salidas de OSRM: se descargan / generan con scripts, pesan.
+*.osm.pbf
+*.osrm*
+/datos/
+
+# Resultados de corridas (lo que va al informe se regenera con su script)
+/resultados/
+
+# Entornos y cachés
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+node_modules/
+
+# Configuración propia de cada máquina
+/CLAUDE.local.md
+.claude/settings.local.json
+.env
+
+# Sistema
+*:Zone.Identifier
+.DS_Store
+~$*
+*.tmp
