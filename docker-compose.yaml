@@ -8,15 +8,15 @@
 #                                        # (otro puerto: VISOR_PUERTO=8088 en .env)
 #   docker compose down
 #
-# Para actualizar el mapa: borrar datos/osrm/ y volver a correr `preparar`. En Linux los
-# archivos quedan a nombre de root; se borran desde el contenedor:
-#   docker compose run --rm mapa sh -c 'rm -f /datos/*'
+# El mapa procesado (~600 MB) vive en el volumen de Docker `osrm-datos`, no en el repo.
+# Para actualizarlo: `docker compose --profile preparar down -v` (borra el volumen; el
+# `--profile` hace falta para quitar también el contenedor `mapa`) y volver a correr `preparar`.
 # Datos © colaboradores de OpenStreetMap (ODbL). Extracto de Geofabrik.
 
 x-osrm: &osrm
   image: ghcr.io/project-osrm/osrm-backend:v6.0.0
   volumes:
-    - ./datos/osrm:/datos
+    - osrm-datos:/datos
 
 services:
   # Descarga el extracto de Paraguay si no está. Baja a un temporal y lo renombra al
@@ -25,7 +25,7 @@ services:
     image: alpine:3.20
     profiles: [preparar]
     volumes:
-      - ./datos/osrm:/datos
+      - osrm-datos:/datos
     command: >
       sh -c 'test -s /datos/paraguay-latest.osm.pbf
       || (wget -O /datos/descarga.tmp
@@ -65,3 +65,8 @@ services:
       - ./demo:/usr/share/nginx/html:ro
       - ./demo/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     restart: unless-stopped
+
+volumes:
+  # Mapa de OSM y archivos procesados por OSRM. Un volumen y no una carpeta del repo: no deja
+  # archivos de root en la máquina y en Docker Desktop (Windows / Mac) es mucho más rápido.
+  osrm-datos:

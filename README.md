@@ -29,8 +29,9 @@ mapa agrega un casillero, arrastrar lo mueve, clic derecho lo quita. Botones:
   capacidad. Es una referencia, no el método del proyecto.
 - *Matriz de tiempos*: la entrada del ruteo.
 
-- `preparar` tarda ~1,5 min y deja ~600 MB en `datos/osrm/` (no se versiona). Se corre de nuevo
-  solo para actualizar el mapa.
+- `preparar` tarda ~1,5 min y deja ~600 MB en el volumen de Docker `osrm-datos` (fuera del
+  repo). Para actualizar el mapa: `docker compose --profile preparar down -v` y otra vez
+  `preparar`. Ojo: `down -v` borra el volumen; para solo apagar, `docker compose down`.
 - **Puerto ocupado:** crear un `.env` con `OSRM_PUERTO=5080` y/o `VISOR_PUERTO=8088` (los que
   estén libres); `consulta.py` lee el de OSRM de ahí.
 - El visor usa Leaflet y los mosaicos de `tile.openstreetmap.org` (libres, para uso liviano).
