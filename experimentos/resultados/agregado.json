@@ -1,0 +1,31 @@
+{
+  "corridas": 6,
+  "ciudades": [
+    {
+      "ciudad": "Asunción",
+      "pares": 59302,
+      "instancias": 300,
+      "circuidad_mediana": 1.3567783794097616,
+      "circuidad_p10": 1.1792333371704846,
+      "circuidad_p90": 1.6311092222694432,
+      "exceso_mediana_pct": 1.8185,
+      "exceso_media_pct": 2.4237,
+      "exceso_p90_pct": 8.086,
+      "exceso_max_pct": 20.132,
+      "instancias_con_exceso_pct": 73.0
+    },
+    {
+      "ciudad": "Ciudad del Este",
+      "pares": 59310,
+      "instancias": 300,
+      "circuidad_mediana": 1.4504509222739093,
+      "circuidad_p10": 1.229667986597624,
+      "circuidad_p90": 1.9372342579469528,
+      "exceso_mediana_pct": 3.1685,
+      "exceso_media_pct": 3.819663333333333,
+      "exceso_p90_pct": 10.908,
+      "exceso_max_pct": 19.514,
+      "instancias_con_exceso_pct": 79.33333333333333
+    }
+  ]
+}

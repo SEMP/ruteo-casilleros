@@ -39,6 +39,8 @@ CIUDADES = {
 }
 MAX_SNAP_M = 150
 SEMILLA = 2026
+# Tramos de distancia en línea recta (m) para ver cómo cambia la circuidad con la distancia.
+TRAMOS_M = [(200, 1000), (1000, 3000), (3000, 6000), (6000, float("inf"))]
 
 
 def haversine_m(a, b):
@@ -107,8 +109,15 @@ def analizar_ciudad(servidor, nombre, caja, rng, n_pares, n_instancias, tam_inst
     durac, dist, _ = matriz_osrm(servidor, puntos)
     recta = [[haversine_m(a, b) for b in puntos] for a in puntos]
 
-    circuidad = [dist[i][j] / recta[i][j] for i in range(n_pares) for j in range(n_pares)
-                 if i != j and recta[i][j] > 200]
+    pares = [(recta[i][j], dist[i][j], durac[i][j]) for i in range(n_pares) for j in range(n_pares)
+             if i != j and recta[i][j] > 200]
+    circuidad = [d / r for r, d, _ in pares]
+    por_tramo = []
+    for desde, hasta in TRAMOS_M:
+        valores = [d / r for r, d, _ in pares if desde <= r < hasta]
+        if valores:
+            por_tramo.append({"desde_m": desde, "hasta_m": None if hasta == float("inf") else hasta,
+                              "pares": len(valores), "circuidad_mediana": statistics.median(valores)})
     distinto = sum(
         min((j for j in range(n_pares) if j != i), key=lambda j: recta[i][j])
         != min((j for j in range(n_pares) if j != i), key=lambda j: durac[i][j])
@@ -123,7 +132,7 @@ def analizar_ciudad(servidor, nombre, caja, rng, n_pares, n_instancias, tam_inst
         con_red = costo(vecino_mas_cercano_2opt(m_tiempo), m_tiempo)
         excesos.append(100 * (con_recta - con_red) / con_red)
 
-    return {
+    resumen = {
         "ciudad": nombre,
         "puntos": n_pares,
         "pares": len(circuidad),
@@ -139,7 +148,13 @@ def analizar_ciudad(servidor, nombre, caja, rng, n_pares, n_instancias, tam_inst
         "exceso_recta_mediana_pct": statistics.median(excesos),
         "exceso_recta_max_pct": max(excesos),
         "instancias_con_exceso_pct": 100 * sum(e > 0.01 for e in excesos) / n_instancias,
+        "exceso_recta_media_pct": statistics.mean(excesos),
+        "circuidad_por_tramo": por_tramo,
     }
+    # Datos por par e instancia, para las figuras del artículo.
+    detalle = {"ciudad": nombre, "pares_recta_dist_tiempo": [[round(r), round(d), round(t, 1)] for r, d, t in pares],
+               "excesos_pct": [round(e, 3) for e in excesos]}
+    return resumen, detalle
 
 
 def tiempos_matriz(servidor, caja, rng, tamanos, repeticiones=3):
@@ -158,22 +173,30 @@ def main():
     parser.add_argument("--instancias", type=int, default=50)
     parser.add_argument("--casilleros", type=int, default=15)
     parser.add_argument("--salida", default=None, help="carpeta donde guardar resultados.json")
+    parser.add_argument("--semilla", type=int, default=SEMILLA)
+    parser.add_argument("--sin-matriz", action="store_true", help="no medir el tiempo de cálculo de la matriz")
     args = parser.parse_args()
     servidor = args.servidor or f"http://localhost:{puerto_osrm()}"
-    rng = random.Random(SEMILLA)
+    rng = random.Random(args.semilla)
 
-    resultados = {"semilla": SEMILLA, "max_snap_m": MAX_SNAP_M, "ciudades": [], "matriz": None}
+    resultados = {"semilla": args.semilla, "max_snap_m": MAX_SNAP_M, "ciudades": [], "matriz": None}
+    detalles = []
     for nombre, caja in CIUDADES.items():
-        fila = analizar_ciudad(servidor, nombre, caja, rng, args.puntos, args.instancias, args.casilleros)
+        fila, detalle = analizar_ciudad(servidor, nombre, caja, rng, args.puntos, args.instancias, args.casilleros)
         resultados["ciudades"].append(fila)
+        detalles.append(detalle)
         print(json.dumps(fila, ensure_ascii=False, indent=2))
-    resultados["matriz"] = tiempos_matriz(servidor, CIUDADES["Asunción"], rng, [10, 100, 500, 1000])
-    print(json.dumps(resultados["matriz"], indent=2))
+    if not args.sin_matriz:
+        resultados["matriz"] = tiempos_matriz(servidor, CIUDADES["Asunción"], rng, [10, 100, 500, 1000])
+        print(json.dumps(resultados["matriz"], indent=2))
 
     if args.salida:
         os.makedirs(args.salida, exist_ok=True)
-        with open(os.path.join(args.salida, "linea_recta_vs_red.json"), "w", encoding="utf-8") as archivo:
+        sufijo = "" if args.semilla == SEMILLA else f"_s{args.semilla}"
+        with open(os.path.join(args.salida, f"linea_recta_vs_red{sufijo}.json"), "w", encoding="utf-8") as archivo:
             json.dump(resultados, archivo, ensure_ascii=False, indent=2)
+        with open(os.path.join(args.salida, f"linea_recta_vs_red{sufijo}_detalle.json"), "w", encoding="utf-8") as archivo:
+            json.dump(detalles, archivo, ensure_ascii=False)
 
 
 if __name__ == "__main__":

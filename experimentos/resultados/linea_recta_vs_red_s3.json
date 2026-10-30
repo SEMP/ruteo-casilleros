@@ -1,0 +1,91 @@
+{
+  "semilla": 3,
+  "max_snap_m": 150,
+  "ciudades": [
+    {
+      "ciudad": "Ciudad del Este",
+      "puntos": 100,
+      "pares": 9890,
+      "circuidad_mediana": 1.45807894872384,
+      "circuidad_p10": 1.2302809664288494,
+      "circuidad_p90": 1.9119911833655943,
+      "vecino_distinto_pct": 31.0,
+      "asimetria_tiempo_pct": 4.0841832210550875,
+      "instancias": 50,
+      "casilleros_por_instancia": 15,
+      "exceso_recta_mediana_pct": 1.707230306677229,
+      "exceso_recta_max_pct": 11.475930632381528,
+      "instancias_con_exceso_pct": 74.0,
+      "exceso_recta_media_pct": 2.5242251068421235,
+      "circuidad_por_tramo": [
+        {
+          "desde_m": 200,
+          "hasta_m": 1000,
+          "pares": 338,
+          "circuidad_mediana": 1.4166031428150259
+        },
+        {
+          "desde_m": 1000,
+          "hasta_m": 3000,
+          "pares": 2084,
+          "circuidad_mediana": 1.4965989457686217
+        },
+        {
+          "desde_m": 3000,
+          "hasta_m": 6000,
+          "pares": 4580,
+          "circuidad_mediana": 1.4749745241698182
+        },
+        {
+          "desde_m": 6000,
+          "hasta_m": null,
+          "pares": 2888,
+          "circuidad_mediana": 1.4172135667896613
+        }
+      ]
+    },
+    {
+      "ciudad": "Asunción",
+      "puntos": 100,
+      "pares": 9882,
+      "circuidad_mediana": 1.3479400698402448,
+      "circuidad_p10": 1.168442111781578,
+      "circuidad_p90": 1.5774401319572189,
+      "vecino_distinto_pct": 26.0,
+      "asimetria_tiempo_pct": 4.747353543391942,
+      "instancias": 50,
+      "casilleros_por_instancia": 15,
+      "exceso_recta_mediana_pct": 0.7294935290891746,
+      "exceso_recta_max_pct": 20.131713951657183,
+      "instancias_con_exceso_pct": 62.0,
+      "exceso_recta_media_pct": 1.9738560987549985,
+      "circuidad_por_tramo": [
+        {
+          "desde_m": 200,
+          "hasta_m": 1000,
+          "pares": 308,
+          "circuidad_mediana": 1.4924369417247376
+        },
+        {
+          "desde_m": 1000,
+          "hasta_m": 3000,
+          "pares": 2000,
+          "circuidad_mediana": 1.4178890301906861
+        },
+        {
+          "desde_m": 3000,
+          "hasta_m": 6000,
+          "pares": 4406,
+          "circuidad_mediana": 1.348847031709779
+        },
+        {
+          "desde_m": 6000,
+          "hasta_m": null,
+          "pares": 3168,
+          "circuidad_mediana": 1.315865712777245
+        }
+      ]
+    }
+  ],
+  "matriz": null
+}
