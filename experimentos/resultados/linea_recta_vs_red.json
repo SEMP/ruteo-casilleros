@@ -1,0 +1,54 @@
+{
+  "semilla": 2026,
+  "max_snap_m": 150,
+  "ciudades": [
+    {
+      "ciudad": "Ciudad del Este",
+      "puntos": 100,
+      "pares": 9880,
+      "circuidad_mediana": 1.454105248027604,
+      "circuidad_p10": 1.2312943231063291,
+      "circuidad_p90": 1.9677557565191712,
+      "vecino_distinto_pct": 34.0,
+      "asimetria_tiempo_pct": 4.405654214584982,
+      "instancias": 50,
+      "casilleros_por_instancia": 15,
+      "exceso_recta_mediana_pct": 4.431996129341428,
+      "exceso_recta_max_pct": 17.914175634382886,
+      "instancias_con_exceso_pct": 88.0
+    },
+    {
+      "ciudad": "Asunción",
+      "puntos": 100,
+      "pares": 9882,
+      "circuidad_mediana": 1.3667760811785867,
+      "circuidad_p10": 1.1828911501375265,
+      "circuidad_p90": 1.6635635646575342,
+      "vecino_distinto_pct": 28.0,
+      "asimetria_tiempo_pct": 5.082253101847224,
+      "instancias": 50,
+      "casilleros_por_instancia": 15,
+      "exceso_recta_mediana_pct": 2.612825539984218,
+      "exceso_recta_max_pct": 16.244922139471907,
+      "instancias_con_exceso_pct": 74.0
+    }
+  ],
+  "matriz": [
+    {
+      "puntos": 10,
+      "segundos_mediana": 0.03507218600134365
+    },
+    {
+      "puntos": 100,
+      "segundos_mediana": 0.4122621429996798
+    },
+    {
+      "puntos": 500,
+      "segundos_mediana": 4.689936350001517
+    },
+    {
+      "puntos": 1000,
+      "segundos_mediana": 14.538260851000814
+    }
+  ]
+}
