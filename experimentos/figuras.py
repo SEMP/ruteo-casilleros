@@ -42,7 +42,8 @@ def fda_svg(series, titulo_x, x_min, x_max, ticks_x, formato_x, ruta):
               f'<rect width="{ancho}" height="{alto}" fill="#ffffff"/>']
     for y in [0, 0.25, 0.5, 0.75, 1]:
         partes.append(f'<line x1="{izq}" y1="{py(y):.1f}" x2="{izq + w}" y2="{py(y):.1f}" stroke="#e3e3e3"/>')
-        partes.append(f'<text x="{izq - 8}" y="{py(y) + 4:.1f}" text-anchor="end" fill="#333">{y:.2f}'.replace(".", ",") + '</text>')
+        etiqueta = f"{y:.2f}".replace(".", ",")
+        partes.append(f'<text x="{izq - 8}" y="{py(y) + 4:.1f}" text-anchor="end" fill="#333">{etiqueta}</text>')
     for x in ticks_x:
         partes.append(f'<line x1="{px(x):.1f}" y1="{arr}" x2="{px(x):.1f}" y2="{arr + h}" stroke="#eeeeee"/>')
         partes.append(f'<text x="{px(x):.1f}" y="{arr + h + 18}" text-anchor="middle" fill="#333">{formato_x(x)}</text>')
@@ -100,7 +101,7 @@ def main():
             1.0, 2.5, [1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5], lambda x: f"{x:.2f}".replace(".", ","),
             os.path.join(figuras, "circuidad_fda.svg"))
     fda_svg(excesos, "Exceso de tiempo de la ruta planificada con distancia euclidiana (%)",
-            -2, 20, [0, 5, 10, 15, 20], lambda x: f"{x:g}", os.path.join(figuras, "exceso_fda.svg"))
+            -12, 21, [-10, -5, 0, 5, 10, 15, 20], lambda x: f"{x:g}".replace("-", "−"), os.path.join(figuras, "exceso_fda.svg"))
 
 
 if __name__ == "__main__":
